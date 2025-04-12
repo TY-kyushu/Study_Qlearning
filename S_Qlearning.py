@@ -190,3 +190,69 @@ class Environment():
         reward, done = self.reward_func(next_state)
         return next_state, reward, done
 
+#ε-greedy方策の記録・可視化
+class ELAgent():
+
+    def __init__(self, epsilon):
+        #行動価値関数
+        self.Q = {}
+        #探索の割合
+        self.epsilon = epsilon
+        #報酬記録用リスト
+        self.reward_log = []
+
+    #行動を選択する
+    def policy(self, s, actions):
+        #ε内であればランダムに行動を選択
+        if np.random.random() < self.epsilon:
+            return actions[np.random.randint(len(actions))]
+        #ε外であれば行動価値関数が最大の方策を選択
+        #状態ｓが未登録であればランダムに行動を選択
+        else:
+            if s in self.Q and sum(self.Q[s]) != 0:
+                return np.argmax(self.Q[s])
+            else:
+                return actions[np.random.randint(len(actions))]
+
+    #報酬記録をリセット
+    def init_log(self):
+        self.reward_log = []
+
+    #報酬を記録
+    def log(self, reward):
+        self.reward_log.append(reward)
+
+    #報酬の記録をグラフにする
+    def show_reward_log(self, interval=25, episode=-1):
+        #直近25回分の報酬の平均とばらつきを表示
+        if episode > 0:
+            #[-interval:]はリストの最後から取り出す書き方
+            rewards = self.reward_log[-interval:]
+            #平均と分散を小数点以下３桁で
+            mean = np.round(np.mean(rewards), 3)
+            std = np.round(np.std(rewards), 3)
+            print('At Episode {} average reward is {} (+/-{})'.format(episode, mean, std))
+        
+        #全体をグラフで見る
+        else:
+            #報酬の履歴を区切る位置を記録
+            indices = list(range(0, len(self.reward_log), interval))
+            #それぞれの区間で平均と分散を記録
+            means = []
+            stds = []
+            for i in indices:
+                rewards = self.reward_log[i:(i + interval)]
+                means.append(np.mean(rewards))
+                stds.append(np.std(rewards))
+            #グラフにプロット
+            means = np.array(means)
+            stds = np.array(stds)
+            plt.figure()
+            plt.title('Step History')
+            plt.grid()
+            plt.fill_between(indices, means - stds, means + stds, alpha=0.1, color='g')
+            plt.plot(indices, means, 'o-', color='g', label='Rewards for each {} episode'.format(interval))
+            plt.legend(loc='best')
+            #自動保存
+            plt.savefig('Step History_{}.png'.format(self.epsilon))
+            plt.show()
