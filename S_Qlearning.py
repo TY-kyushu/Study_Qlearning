@@ -256,3 +256,38 @@ class ELAgent():
             #自動保存
             plt.savefig('Step History_{}.png'.format(self.epsilon))
             plt.show()
+
+#Q学習の実装
+class QLearningAgent(ELAgent):
+
+    def __init__(self, epsilon=0.20):
+        #親クラスのメソッドを呼び出すための関数
+        super().__init__(epsilon)
+
+    #
+    def learn(self, env, episode_count=500, gamma=0.9, learning_rate=0.1, render=False, report_interval=50):
+        #報酬記録とQテーブルの初期化
+        self.init_log()
+        self.Q = defaultdict(lambda: [0] * len(actions))
+        actions = list(range(4))
+        for e in range(episode_count):
+            s = env.reset()
+            done = False
+            count = 0
+            while not done:
+                if render:
+                    env.render()
+                can_actions = env.can_action(s, actions)
+                a = self.policy(s, can_actions)
+                n_state, reward, done = env.step(a)
+                gain = reward + gamma * (max(self.Q[n_state]))
+                estimated = self.Q[s][a]
+                self.Q[s][a] += learning_rate * (gain - estimated)
+                s = n_state
+                count += 1
+
+            else:
+                self.log(count)
+
+            if e != 0 and e % report_interval == 0:
+                self.show_reward_log(episode=e)
