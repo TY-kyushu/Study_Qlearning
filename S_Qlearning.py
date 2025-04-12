@@ -5,7 +5,7 @@ from collections import defaultdict
 
 class State():
 #この State クラスは、グリッド上の状態（マス目の位置）を表すためのクラスです。
-    def __init__(self,row=-1,column=-1):#row:行番号,column:列番号
+    def __init__(self,row=-1,column=-1):#row:行番号(デフォルトが-1),column:列番号(デフォルトが-1)
         self.row=row
         self.column=column
 
@@ -104,15 +104,17 @@ class Environment():
 
     #     return transition_probs
 
+    #0or-1かを判断するかを判断する
     def can_action_at(self, state):
         if self.grid[state.row][state.column] == 0 or -1:
             return True
         else:
             return False
 
+    #指定されたstateで動けない方向をチェックし、可能な行動を返す
     def can_action(self, state, actions):
         can_actions = []
-        # Check whether the agent bumped a block cell.
+        # 壁かどうか確かめる.
         if self.grid[state.row -1][state.column] != 9:
             can_actions.append(0)
         if self.grid[state.row +1][state.column] != 9:
@@ -123,7 +125,7 @@ class Environment():
             can_actions.append(3)
         return can_actions
 
-
+    #動いた先のstateを返す
     def _move(self, state, action):
         if not self.can_action_at(state):
             print(state.row, state.column)
@@ -153,6 +155,8 @@ class Environment():
 
         return next_state
 
+    #いる場所に応じて報酬を返す
+    #終了判定をdoneで行う
     def reward_func(self, state):
         reward = self.default_reward
         done = False
@@ -166,11 +170,13 @@ class Environment():
 
         return reward, done
 
+    #エージェントのいる位置を初期位置にリセット
     def reset(self):
         # Locate the agent at lower left corner.
         self.agent_state = State(1, 1)
         return self.agent_state
 
+    #transit()をもとに実際に1step実行し、次の状態・報酬・終了判定を返す
     def step(self, action):
         next_state, reward, done = self.transit(self.agent_state, action)
         if next_state is not None:
@@ -178,6 +184,7 @@ class Environment():
 
         return next_state, reward, done
 
+    #遷移先と報酬、終了判定をシミュレート
     def transit(self, state, action):
         next_state = self._move(state, action)
         reward, done = self.reward_func(next_state)
